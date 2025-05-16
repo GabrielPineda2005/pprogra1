@@ -27,6 +27,21 @@ public class menu {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        // creacion de archivo 2
+        String nombreArchivo2 = "reparacion.dat";
+        File archivo2 = new File(nombreArchivo);
+        try {
+            if (!archivo2.exists()) {
+                archivo2.createNewFile();
+                FileOutputStream fos = new FileOutputStream(archivo2);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                DataOutputStream dos = new DataOutputStream(bos);
+                dos.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         boolean continuar = true;
         Scanner scanner = new Scanner(System.in);
         while (continuar) {
@@ -71,7 +86,7 @@ public class menu {
     }
 }
 
-public static void RecepcionComputadora(File archivo, Scanner scanner) {
+public static void RecepcionComputadora(File archivo, Scanner scanner, File archivo2) {
         Queue<String> cola = new LinkedList<>();
         int contadorID = 1;
         boolean continuar = true;
@@ -130,7 +145,6 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
                             String cliente = contadorID + "      " + descripcion + "      " + fecha + "      " + nombre + "      " + correo + "      " + telefono;
                             cola.add(cliente);
                             contadorID++;
-
                             // Guardar cola actualizada en archivo binario
                             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivo))) {
                                 oos.writeObject(cola);
@@ -145,7 +159,22 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
                         break;
 
                     case 3:
-                        continuar = false;
+                    System.out.println("Seleccion la accion a realizar:");
+                    System.out.println("1. Entrega de equipo");
+                    System.out.println("2. Enviar computador a reparacion");
+                    System.out.print("Seleccione una opción: ");
+                int opcionfinrevision = scanner.nextInt();
+                scanner.nextLine();
+                switch (opcionfinrevision) {
+                    case 1:
+                    System.out.println("¡Equipo entregado! " + cola.poll());
+                    break;
+                    case 2:
+                    String equipo = cola.peek();
+                    System.out.println("¡Equipo enviado a reparación! " + cola.poll());
+                    break;
+                }
+                           continuar = false;
                         System.out.println("Finalizando recepción...");
                         break;
 
@@ -159,7 +188,67 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
             }
         }
     }
+public static void ReparacionComputadora(Scanner scanner, String equipo, Boolean continuar){
+    // creacion de archivo binario
+String nombreArchivo = "reparacion.dat";
+        File archivo = new File(nombreArchivo);
+        try {
+            if (!archivo.exists()) {
+                archivo.createNewFile();
+                FileOutputStream fos = new FileOutputStream(archivo);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                DataOutputStream dos = new DataOutputStream(bos);
+                dos.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
+        Queue<String> cola = new LinkedList<>();
+        int contadorID = 1;
+        // Cargar la cola existente si el archivo ya existe
+        if (archivo.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivo))) {
+                cola = (Queue<String>) ois.readObject();
+                contadorID = cola.size() + 1; // continuar numeración
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("No se pudo cargar la cola existente. Se iniciará una nueva.");
+            }
+        }
+        while (continuar) {
+            try {
+                System.out.println("\n === REPARACION DE COMPUTADORAS ===");
+                System.out.println("1. Visualizar computadoras en cola");
+                System.out.println("2. Reparacion de computadora");
+                System.out.print("Seleccione una opción: ");
+                int opcionre = scanner.nextInt();
+                scanner.nextLine();
+                switch (opcionre) {
+                    case 1:
+                        System.out.println("\nComputadoras en cola:");
+                        if (cola.isEmpty()) {
+                            System.out.println("No hay computadoras en cola.");
+                        } else {
+                            for (String entrada : cola) {
+                                System.out.println(entrada);
+                            }
+                        }
+                        break;
+                        case 2:
+                        System.out.println("\n Ingrese el nombre del reparador:");
+                        String nombreReparador = scanner.nextLine();
+                        System.out.println("\n Ingrese el nombre del proceso de reparacion:");
+                        String procesoReparacion = scanner.nextLine();
+                        
+                        break;
+                    default:
+                        break;
+                }
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
+}
 public static void limpiarConsola() {
     for (int i = 0; i < 50; i++) {
         System.out.println();
