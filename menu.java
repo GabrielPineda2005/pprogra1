@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
+import java.io.FileWriter;
 
 public class menu {
     public static void main(String[] args) {
@@ -27,6 +28,34 @@ public class menu {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        // creacion de archivo 2
+        String nombreArchivo2 = "reparacion.dat";
+        File archivo2 = new File(nombreArchivo2);
+        try {
+            if (!archivo2.exists()) {
+                archivo2.createNewFile();
+                FileOutputStream fos = new FileOutputStream(archivo2);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                DataOutputStream dos = new DataOutputStream(bos);
+                dos.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // creacion de archivo 3
+        String nombreArchivo3 = "control.dat";
+        File archivo3 = new File(nombreArchivo3);
+        try {
+            if (!archivo3.exists()) {
+                archivo3.createNewFile();
+                FileOutputStream fos = new FileOutputStream(archivo3);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                DataOutputStream dos = new DataOutputStream(bos);
+                dos.close();}
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+
         boolean continuar = true;
         Scanner scanner = new Scanner(System.in);
         while (continuar) {
@@ -43,36 +72,39 @@ public class menu {
                 int opcion = scanner.nextInt();
                 scanner.nextLine();
                 switch (opcion) {
-                case 1:
-                RecepcionComputadora(archivo, scanner);
-                break;
-                case 2:
-                break;
-                case 3:
-                break;
-                case 4:
-                break;
-                case 5:
-                break;
-                case 6:
-                break;
-                case 0:
-                continuar = false;
-                System.out.println("Saliendo del programa...");
-                break;
-                default:
-                System.out.println("Opción no válida. Por favor, elija una opción válida");
+                    case 1:
+                        RecepcionComputadora(archivo, scanner, archivo2);
+                        break;
+                    case 2:
+                        ReparacionComputadora(scanner, "reparacion.dat", archivo3);
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                    case 6:
+                        break;
+                    case 0:
+                        continuar = false;
+                        System.out.println("Saliendo del programa...");
+                        break;
+                    default:
+                        System.out.println("Opción no válida. Por favor, elija una opción válida");
                 }
-                
+
             } catch (Exception e) {
                 System.out.println("Error: Ingrese un dato validado.");
                 scanner.nextLine();
             }
+        }
     }
-}
 
-public static void RecepcionComputadora(File archivo, Scanner scanner) {
+    public static void RecepcionComputadora(File archivo, Scanner scanner, File archivo2) {
         Queue<String> cola = new LinkedList<>();
+        // cola de reparacion de computadoras
+        Queue<String> cola2 = new LinkedList<>();
         int contadorID = 1;
         boolean continuar = true;
 
@@ -81,6 +113,15 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivo))) {
                 cola = (Queue<String>) ois.readObject();
                 contadorID = cola.size() + 1; // continuar numeración
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("No se pudo cargar la cola existente. Se iniciará una nueva.");
+            }
+        }
+
+        // cargar la cola del archivo 2
+        if (archivo2.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivo2))) {
+                cola2 = (Queue<String>) ois.readObject();
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("No se pudo cargar la cola existente. Se iniciará una nueva.");
             }
@@ -112,9 +153,7 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
                         System.out.println("Ingrese la descripción del problema:");
                         String descripcion = scanner.nextLine();
 
-                        LocalDate fechaActual = LocalDate.now();
-                        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-                        String fecha = fechaActual.format(formato);
+                        String fecha = obtenerFechaActual();
 
                         System.out.println("Ingrese el nombre del cliente: ");
                         String nombre = scanner.nextLine();
@@ -127,10 +166,25 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
                         scanner.nextLine(); // limpiar buffer
 
                         if (telefono > 0) {
-                            String cliente = contadorID + "      " + descripcion + "      " + fecha + "      " + nombre + "      " + correo + "      " + telefono;
+                            String cliente = contadorID + "      " + descripcion + "      " + fecha + "      " + nombre
+                                    + "      " + correo + "      " + telefono;
                             cola.add(cliente);
+                            // crear el archivo del historial individual por computador
+                            String nombreArchivoTexto = "PC_" + contadorID + ".txt";
+                            try (FileWriter fw = new FileWriter(nombreArchivoTexto)) {
+                                fw.write("ID: " + contadorID + "\n");
+                                fw.write("Descripción: " + descripcion + "\n");
+                                fw.write("Fecha: " + fecha + "\n");
+                                fw.write("Nombre del Cliente: " + nombre + "\n");
+                                fw.write("Correo: " + correo + "\n");
+                                fw.write("Teléfono: " + telefono + "\n");
+                                System.out.println(
+                                        "Historial de computador : '" + nombreArchivoTexto + "' creado correctamente.");
+                            } catch (IOException e) {
+                                System.out.println("Error al crear el archivo de texto: " + e.getMessage());
+                            }
+                            String idpc = String.valueOf(contadorID);
                             contadorID++;
-
                             // Guardar cola actualizada en archivo binario
                             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivo))) {
                                 oos.writeObject(cola);
@@ -145,6 +199,29 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
                         break;
 
                     case 3:
+                        System.out.println("Seleccion la accion a realizar:");
+                        System.out.println("1. Entrega de equipo");
+                        System.out.println("2. Enviar computador a reparacion");
+                        System.out.print("Seleccione una opción: ");
+                        int opcionfinrevision = scanner.nextInt();
+                        scanner.nextLine();
+                        switch (opcionfinrevision) {
+                            case 1:
+                                System.out.println("¡Equipo entregado! " + cola.poll());
+                                break;
+                            case 2:
+                                String equipo = cola.peek();
+                                cola2.add(equipo);
+                                // guardar la cola del equipo a reparar en archivo binario
+                                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivo2))) {
+                                    oos.writeObject(cola2);
+                                    System.out.println("Datos guardados correctamente en archivo binario.");
+                                } catch (IOException e) {
+                                    System.out.println("Error al guardar los datos: " + e.getMessage());
+                                }
+                                System.out.println("¡Equipo enviado a reparación! " + cola.poll());
+                                break;
+                        }
                         continuar = false;
                         System.out.println("Finalizando recepción...");
                         break;
@@ -160,9 +237,154 @@ public static void RecepcionComputadora(File archivo, Scanner scanner) {
         }
     }
 
-public static void limpiarConsola() {
-    for (int i = 0; i < 50; i++) {
-        System.out.println();
+    public static void ReparacionComputadora(Scanner scanner, String nombreArchivo, File archivo3) {
+        File archivo = new File(nombreArchivo);
+        Queue<String> cola = new LinkedList<>();
+        Queue<String> cola3 = new LinkedList<>();
+    
+        // Cargar la cola existente
+        if (archivo.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivo))) {
+                cola = (Queue<String>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("No se pudo cargar la cola de reparación.");
+                return;
+            }
+        }
+    
+        // Cargar la cola 3 (control de calidad)
+        if (archivo3.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivo3))) {
+                cola3 = (Queue<String>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("No se pudo cargar la cola existente. Se iniciará una nueva.");
+            }
+        }
+    
+        boolean continuar = true;
+        while (continuar) {
+            try {
+                System.out.println("\n=== REPARACIÓN DE COMPUTADORAS ===");
+                System.out.println("1. Ver computadoras en reparación");
+                System.out.println("2. Reparar computadora");
+                System.out.println("3. Salir");
+                System.out.print("Seleccione una opción: ");
+                int opcion = scanner.nextInt();
+                scanner.nextLine(); // Limpiar buffer
+    
+                switch (opcion) {
+                    case 1:
+                        System.out.println("\nComputadoras en reparación:");
+                        if (cola.isEmpty()) {
+                            System.out.println("No hay computadoras en cola.");
+                        } else {
+                            for (String entrada : cola) {
+                                System.out.println(entrada);
+                            }
+                        }
+                        break;
+    
+                    case 2:
+                        if (cola.isEmpty()) {
+                            System.out.println("No hay computadoras para reparar.");
+                            break;
+                        }
+    
+                        String equipo = cola.peek();
+                        System.out.println("Reparando equipo: " + equipo);
+    
+                        System.out.print("Ingrese el nombre del reparador: ");
+                        String nombreReparador = scanner.nextLine();
+    
+                        System.out.print("Ingrese la descripción de la reparación realizada: ");
+                        String procesoReparacion = scanner.nextLine();
+    
+                        String fecha = obtenerFechaActual();
+    
+                        String[] partes = equipo.split(" ");
+                        String idEquipo = partes[0];
+                        String archivoHistorial = "PC_" + idEquipo + ".txt";
+    
+                        try (FileWriter fw = new FileWriter(archivoHistorial, true)) {
+                            fw.write("\n-----------------------------\n");
+                            fw.write("===== ETAPA DE REPARACIÓN =====\n");
+                            fw.write("Nombre del reparador: " + nombreReparador + "\n");
+                            fw.write("Descripción: " + procesoReparacion + "\n");
+                            fw.write("Fecha: " + fecha + "\n");
+    
+                            String ccalida = cola.peek();
+                            cola3.add(ccalida);
+    
+                            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivo3))) {
+                                oos.writeObject(cola3);
+                                System.out.println("Datos guardados correctamente en archivo binario.");
+                            } catch (IOException e) {
+                                System.out.println("Error al guardar los datos: " + e.getMessage());
+                            }
+    
+                            System.out.println("¡Equipo enviado a control de calidad! " + cola.poll());
+                        } catch (IOException e) {
+                            System.out.println("Error al escribir en historial: " + e.getMessage());
+                        }
+    
+                        cola.poll(); // eliminar equipo reparado
+    
+                        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivo))) {
+                            oos.writeObject(cola);
+                            System.out.println("Cola de reparación actualizada correctamente.");
+                        } catch (IOException e) {
+                            System.out.println("Error al guardar la cola: " + e.getMessage());
+                        }
+                        break;
+    
+                    case 3:
+                        continuar = false;
+                        break;
+    
+                    default:
+                        System.out.println("Opción inválida. Intente nuevamente.");
+                }
+    
+            } catch (Exception e) {
+                System.out.println("Entrada inválida. Por favor, ingrese un número válido.");
+                scanner.nextLine(); // limpiar el buffer para evitar bucles
+            }
+        }
     }
-}
+    
+    public static void ControldeCalidad(Scanner scanner, String nombreArchivo3, File archivo3){
+        Queue<String> cola3 = new LinkedList<>();
+        if (archivo3.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivo3))) {
+                cola3 = (Queue<String>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("No se pudo cargar la cola existente. Se iniciará una nueva.");
+            }
+        }
+        boolean continuar = true;
+        while (continuar) {
+            try {
+                System.out.println("\n====Control de Calidad====");
+                System.out.println("1. Listar equipos para revision");
+                System.out.println("2. Enviar a entrega");
+                System.out.println("3. Retornar equipo a reparacion");
+                System.out.println("Ingrese la opcion para realizar: ");
+                int opcion = scanner.nextInt();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
+    }
+    
+    public static void limpiarConsola() {
+        for (int i = 0; i < 50; i++) {
+            System.out.println();
+        }
+    }
+
+    public static String obtenerFechaActual() {
+        LocalDate fechaActual = LocalDate.now();
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        return fechaActual.format(formato);
+    }
 }
